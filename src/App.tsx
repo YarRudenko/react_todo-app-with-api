@@ -16,7 +16,6 @@ import { StatusFilter, StatusFilterOptions } from './components/StatusFilter';
 import { TodoCreateForm } from './components/TodoCreateForm';
 import { TodoModify } from './types/TotoModify';
 import cn from 'classnames';
-import { Promise } from 'cypress/types/bluebird';
 
 interface GetFilteredTodosFilters {
   status: StatusFilterOptions;
@@ -67,9 +66,6 @@ export const App: React.FC = () => {
   const activeTodosAmount = todos.length - completedTodos.length;
 
   useEffect(() => {
-    if (createFormRef.current) {
-      console;
-    }
     getTodos()
       .then(setTodos)
       .catch(() => {
@@ -136,10 +132,10 @@ export const App: React.FC = () => {
       handleAddTodoToProcessing(todoId);
 
       return updateTodo(todoId, modifiedTodo)
-        .then(updateTodo => {
+        .then(updatedTodo => {
           setTodos(current =>
             current.map(todo => {
-              return todo.id === todoId ? updateTodo : todo;
+              return todo.id === todoId ? updatedTodo : todo;
             }),
           );
         })
