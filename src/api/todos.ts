@@ -1,5 +1,4 @@
 import { Todo } from '../types/Todo';
-import { TodoModify } from '../types/TotoModify';
 import { client } from '../utils/fetchClient';
 
 export const USER_ID = 3098;
@@ -24,10 +23,10 @@ export const deleteTodo = (todoId: Todo['id']) => {
   return client.delete(`/todos/${todoId}`);
 };
 
-export const createTodo = (newTodo: TodoModify) => {
+export const createTodo = (newTodo: Omit<Todo, 'id'>) => {
   return client.post<Todo>(`/todos`, newTodo);
 };
 
-export const updateTodo = (todoId: Todo['id'], todo: TodoModify) => {
+export const updateTodo = (todoId: Todo['id'], todo: Omit<Todo, 'id'>) => {
   return client.patch<Todo>(`/todos/${todoId}`, todo);
 };

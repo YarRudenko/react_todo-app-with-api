@@ -18,17 +18,17 @@ export const StatusFilter = ({
 }: StatusFilterProps) => {
   return (
     <nav className="filter" data-cy="Filter">
-      {Object.entries(StatusFilterOptions).map(([text, value]) => (
+      {Object.values(StatusFilterOptions).map(value => (
         <a
           key={value}
           href={`#/${value !== 'all' ? value : ''}`}
           className={cn('filter__link', {
             selected: statusFilter === value,
           })}
-          data-cy={`FilterLink${text}`}
+          data-cy={`FilterLink${value[0].toUpperCase() + value.slice(1)}`}
           onClick={() => onStatusFilterChange(value)}
         >
-          {text}
+          {value[0].toUpperCase() + value.slice(1)}
         </a>
       ))}
     </nav>

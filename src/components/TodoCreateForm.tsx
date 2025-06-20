@@ -23,6 +23,7 @@ export const TodoCreateForm = forwardRef<HTMLInputElement, TodoCreateFormProps>(
 
       if (!normalizedTitle) {
         onError(TodoServiceError.TitleShouldNotBeEmpty);
+
         return;
       }
 
@@ -30,6 +31,7 @@ export const TodoCreateForm = forwardRef<HTMLInputElement, TodoCreateFormProps>(
         .then(() => setNewTitle(''))
         .catch(() => {});
     };
+
     return (
       <form onSubmit={handleSubmit}>
         <input
@@ -46,3 +48,5 @@ export const TodoCreateForm = forwardRef<HTMLInputElement, TodoCreateFormProps>(
     );
   },
 );
+
+TodoCreateForm.displayName = 'TodoCreateForm';

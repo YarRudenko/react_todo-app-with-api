@@ -1,13 +1,12 @@
 import { ChangeEvent, useState } from 'react';
 import { Todo } from '../types/Todo';
 import cn from 'classnames';
-import { TodoModify } from '../types/TotoModify';
 import { TodoRenameForm } from './TodoRenameForm';
 
 interface TodoItemProps {
   todo: Todo;
-  onDeleteTodo: (todoId: Todo['id']) => void;
-  onUpdateTodo: (todoId: Todo['id'], todo: TodoModify) => Promise<void>;
+  onDeleteTodo: (todoId: number) => void;
+  onUpdateTodo: (todoId: number, todo: Omit<Todo, 'id'>) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -22,7 +21,7 @@ export const TodoItem = ({
   const handleCancelEditing = () => setIsEditing(false);
 
   const handleStatusChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const modifiedTodo: TodoModify = {
+    const modifiedTodo: Omit<Todo, 'id'> = {
       completed: event.target.checked,
       title: todo.title,
       userId: todo.userId,
@@ -40,10 +39,11 @@ export const TodoItem = ({
 
     if (newTitle === '') {
       onDeleteTodo(todo.id);
+
       return;
     }
 
-    const todoModify: TodoModify = {
+    const todoModify: Omit<Todo, 'id'> = {
       title: newTitle,
       completed: todo.completed,
       userId: todo.userId,
@@ -69,6 +69,7 @@ export const TodoItem = ({
           className="todo__status"
           checked={todo.completed}
           onChange={handleStatusChange}
+          aria-label="Toggle todo status"
         />
       </label>
 

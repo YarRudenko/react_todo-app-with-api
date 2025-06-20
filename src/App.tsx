@@ -11,28 +11,28 @@ import {
 } from './api/todos';
 import { Todo } from './types/Todo';
 import { ErrorNotification } from './components/ErrorNotification';
-import { TodoItem } from './components/TodoItem';
-import { StatusFilter, StatusFilterOptions } from './components/StatusFilter';
+import { StatusFilterOptions } from './components/StatusFilter';
 import { TodoCreateForm } from './components/TodoCreateForm';
-import { TodoModify } from './types/TotoModify';
 import cn from 'classnames';
+import { Footer } from './components/Footer';
+import { TodoList } from './components/TodoList';
 
 interface GetFilteredTodosFilters {
   status: StatusFilterOptions;
 }
 
 const getFilteredTodos = (todos: Todo[], filter: GetFilteredTodosFilters) => {
-  let filteredTodos = [...todos];
+  switch (filter.status) {
+    case StatusFilterOptions.Completed:
+      return todos.filter(todo => todo.completed);
 
-  if (filter.status !== StatusFilterOptions.All) {
-    filteredTodos = filteredTodos.filter(todo => {
-      return filter.status === StatusFilterOptions.Completed
-        ? todo.completed
-        : !todo.completed;
-    });
+    case StatusFilterOptions.Active:
+      return todos.filter(todo => !todo.completed);
+
+    case StatusFilterOptions.All:
+    default:
+      return todos;
   }
-
-  return filteredTodos;
 };
 
 export const App: React.FC = () => {
@@ -44,11 +44,11 @@ export const App: React.FC = () => {
 
   const createFormRef = useRef<HTMLInputElement>(null);
 
-  const handleAddTodoToProcessing = (todoId: Todo['id']) => {
+  const handleAddTodoToProcessing = (todoId: number) => {
     setProcessingTodoIds(current => [...current, todoId]);
   };
 
-  const handleRemoveTodoFromProcessing = (todoId: Todo['id']) => {
+  const handleRemoveTodoFromProcessing = (todoId: number) => {
     setProcessingTodoIds(current => current.filter(id => id !== todoId));
   };
 
@@ -56,7 +56,7 @@ export const App: React.FC = () => {
 
   const handleHideError = useCallback(() => setErrorMessage(null), []);
 
-  const showFooter = todos.length > 0;
+  const showComponent = todos.length > 0;
 
   const filteredTodos = getFilteredTodos(todos, {
     status: statusFilter,
@@ -64,8 +64,11 @@ export const App: React.FC = () => {
 
   const completedTodos = todos.filter(todo => todo.completed);
   const activeTodosAmount = todos.length - completedTodos.length;
+  const activeButton = todos.length === completedTodos.length;
 
   useEffect(() => {
+    setTodosLoading(true);
+
     getTodos()
       .then(setTodos)
       .catch(() => {
@@ -74,11 +77,12 @@ export const App: React.FC = () => {
       .finally(() => setTodosLoading(false));
   }, []);
 
-  const handleAddTodo = useCallback((title: Todo['title']) => {
+  const handleAddTodo = useCallback((title: string) => {
     if (createFormRef.current) {
       createFormRef.current.disabled = true;
     }
-    const newTodo: TodoModify = {
+
+    const newTodo: Omit<Todo, 'id'> = {
       title,
       completed: false,
       userId: USER_ID,
@@ -108,7 +112,7 @@ export const App: React.FC = () => {
       });
   }, []);
 
-  const handleDeleteTodo = useCallback((todoId: Todo['id']) => {
+  const handleDeleteTodo = useCallback((todoId: number) => {
     handleAddTodoToProcessing(todoId);
 
     deleteTodo(todoId)
@@ -117,8 +121,6 @@ export const App: React.FC = () => {
       })
       .catch(() => {
         setErrorMessage(TodoServiceError.UnableToDelete);
-
-        // throw new Error(TodoServiceError.UnableToDelete);
       })
       .finally(() => {
         handleRemoveTodoFromProcessing(todoId);
@@ -128,7 +130,7 @@ export const App: React.FC = () => {
   }, []);
 
   const handleUpdateTodo = useCallback(
-    (todoId: Todo['id'], modifiedTodo: TodoModify) => {
+    (todoId: number, modifiedTodo: Omit<Todo, 'id'>) => {
       handleAddTodoToProcessing(todoId);
 
       return updateTodo(todoId, modifiedTodo)
@@ -153,6 +155,7 @@ export const App: React.FC = () => {
 
   const handleToggleAllStatus = useCallback(() => {
     const activeTodos = todos.filter(todo => !todo.completed);
+
     if (activeTodos.length) {
       activeTodos.forEach(activeTodo => {
         handleUpdateTodo(activeTodo.id, {
@@ -188,11 +191,11 @@ export const App: React.FC = () => {
 
       <div className="todoapp__content">
         <header className="todoapp__header">
-          {todos.length > 0 && (
+          {showComponent && (
             <button
               type="button"
               className={cn('todoapp__toggle-all', {
-                active: todos.length && todos.length === completedTodos.length,
+                active: todos.length && activeButton,
               })}
               data-cy="ToggleAllButton"
               onClick={handleToggleAllStatus}
@@ -208,49 +211,22 @@ export const App: React.FC = () => {
 
         {!todosLoading && (
           <>
-            <section className="todoapp__main" data-cy="TodoList">
-              {filteredTodos.map(todo => (
-                <TodoItem
-                  key={todo.id}
-                  todo={todo}
-                  onDeleteTodo={handleDeleteTodo}
-                  onUpdateTodo={handleUpdateTodo}
-                  isLoading={processingTodoIds.includes(todo.id)}
-                />
-              ))}
+            <TodoList
+              todos={filteredTodos}
+              temporaryTodo={temporaryTodo}
+              onDeleteTodo={handleDeleteTodo}
+              onUpdateTodo={handleUpdateTodo}
+              processingTodoIds={processingTodoIds}
+            />
 
-              {temporaryTodo && (
-                <TodoItem
-                  todo={temporaryTodo}
-                  onDeleteTodo={() => {}}
-                  onUpdateTodo={handleUpdateTodo}
-                  isLoading
-                />
-              )}
-            </section>
-
-            {showFooter && (
-              <footer className="todoapp__footer" data-cy="Footer">
-                <span className="todo-count" data-cy="TodosCounter">
-                  {activeTodosAmount} items left
-                </span>
-
-                <StatusFilter
-                  statusFilter={statusFilter}
-                  onStatusFilterChange={setStatusFilter}
-                />
-
-                <button
-                  type="button"
-                  className="todoapp__clear-completed"
-                  data-cy="ClearCompletedButton"
-                  onClick={handleClearCompleted}
-                  disabled={!completedTodos.length}
-                >
-                  Clear completed
-                </button>
-              </footer>
-            )}
+            <Footer
+              show={showComponent}
+              activeTodosAmount={activeTodosAmount}
+              completedTodos={completedTodos}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              handleClearCompleted={handleClearCompleted}
+            />
           </>
         )}
       </div>
